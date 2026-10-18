@@ -1,0 +1,19 @@
+{
+  "name": "Serpent - Mini-jeu",
+  "short_name": "Serpent",
+  "description": "Un petit jeu du serpent, jouable au clavier ou au toucher.",
+  "start_url": "./serpent.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#142b26",
+  "theme_color": "#142b26",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

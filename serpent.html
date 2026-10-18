@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#142b26">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Serpent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <title>Serpent | Mini-jeu</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --night: #142b26;
+      --field: #0d211d;
+      --paper: #f1eee2;
+      --ink: #183c36;
+      --muted: #9bb0a2;
+      --lime: #d6f36a;
+      --leaf: #83c98b;
+      --coral: #f07858;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--paper);
+      background-color: var(--night);
+      background-image:
+        linear-gradient(rgba(217, 236, 206, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(217, 236, 206, .035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    button { font: inherit; }
+    [hidden] { display: none !important; }
+
+    .shell {
+      width: min(1060px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    .masthead {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow, .label {
+      margin: 0;
+      color: var(--lime);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font: 700 36px/1.05 Georgia, serif;
+    }
+
+    .edition {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 720px) minmax(220px, 1fr);
+      align-items: start;
+      gap: 22px;
+    }
+
+    .stage {
+      padding: 8px;
+      border: 1px solid rgba(214, 243, 106, .2);
+      background: #091915;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .22);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 6 / 5;
+      background: var(--field);
+      touch-action: none;
+    }
+
+    .side-panel { padding: 6px 0; }
+
+    .score-panel {
+      padding: 20px;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .score-panel .label { color: #a94d36; }
+
+    .score-number {
+      margin: 6px 0 18px;
+      font: 700 54px/.95 Georgia, serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .best-row {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(24, 60, 54, .2);
+      color: #52665d;
+      font-size: 13px;
+    }
+
+    .best-row strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    .status {
+      min-height: 54px;
+      margin: 18px 0 12px;
+      color: var(--paper);
+      font: 700 18px/1.3 Georgia, serif;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .key-list {
+      display: flex;
+      gap: 6px;
+      margin-top: 13px;
+    }
+
+    kbd {
+      display: inline-grid;
+      min-width: 30px;
+      height: 28px;
+      place-items: center;
+      border: 1px solid rgba(241, 238, 226, .2);
+      color: var(--paper);
+      background: rgba(241, 238, 226, .07);
+      font: 600 12px "Segoe UI", sans-serif;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 22px;
+    }
+
+    .action {
+      min-height: 42px;
+      padding: 0 14px;
+      border: 0;
+      color: #fffaf0;
+      background: #c65d40;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .action:hover { background: #a94730; }
+    .action:focus-visible, .pad-button:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+
+    .touch-controls { display: none; }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 560px); padding-top: 18px; }
+      .masthead { margin-bottom: 14px; }
+      h1 { font-size: 30px; }
+      .edition { font-size: 11px; }
+      .game-layout { grid-template-columns: 1fr; gap: 14px; }
+      .stage { padding: 5px; }
+      .side-panel { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; padding: 0; }
+      .score-panel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; padding: 12px 15px; }
+      .score-panel .label { grid-column: 1; }
+      .score-number { grid-column: 1; grid-row: 2; margin: 0; font-size: 40px; }
+      .best-row { grid-column: 2; grid-row: 1 / 3; min-width: 96px; gap: 10px; border: 0; padding: 0; }
+      .status { grid-column: 1; min-height: 0; margin: 5px 0 0; font-size: 16px; }
+      .hint, .key-list { display: none; }
+      .action-row { grid-column: 1; margin: 7px 0 0; }
+      .touch-controls { display: grid; grid-column: 2; grid-row: 2 / 4; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 44px); align-self: center; gap: 4px; }
+      .pad-button { border: 1px solid rgba(214, 243, 106, .28); color: var(--lime); background: #203a34; font-size: 18px; cursor: pointer; touch-action: manipulation; }
+      .pad-up { grid-column: 2; grid-row: 1; }
+      .pad-left { grid-column: 1; grid-row: 2; }
+      .pad-down { grid-column: 2; grid-row: 2; }
+      .pad-right { grid-column: 3; grid-row: 2; }
+    }
+
+    @media (max-width: 370px) {
+      .shell { width: calc(100% - 20px); }
+      .touch-controls { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 40px); }
+      .score-panel { padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Arcade de poche</p>
+        <h1>Serpent</h1>
+      </div>
+      <div class="edition">01 / MINI-JEU</div>
+    </header>
+
+    <section class="game-layout" aria-label="Jeu du serpent">
+      <div class="stage">
+        <canvas id="terrain" width="720" height="600" aria-label="Plateau du jeu du serpent"></canvas>
+      </div>
+
+      <aside class="side-panel">
+        <div class="score-panel" aria-live="polite">
+          <p class="label">Score</p>
+          <p class="score-number" id="score">0</p>
+          <div class="best-row"><span>Record</span><strong id="record">0</strong></div>
+        </div>
+        <p class="status" id="status">Prêt·e ? Appuie sur une flèche.</p>
+        <p class="hint">Mange les pommes, grandis et évite les murs ainsi que ta propre queue.</p>
+        <div class="key-list" aria-label="Touches de déplacement">
+          <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+        </div>
+        <div class="action-row">
+          <button class="action" id="install" type="button" hidden>Installer l'application</button>
+          <button class="action" id="pause" type="button">Pause</button>
+          <button class="action" id="restart" type="button">Recommencer</button>
+        </div>
+
+        <div class="touch-controls" aria-label="Commandes tactiles">
+          <button class="pad-button pad-up" data-direction="up" type="button" aria-label="Aller en haut">↑</button>
+          <button class="pad-button pad-left" data-direction="left" type="button" aria-label="Aller à gauche">←</button>
+          <button class="pad-button pad-down" data-direction="down" type="button" aria-label="Aller en bas">↓</button>
+          <button class="pad-button pad-right" data-direction="right" type="button" aria-label="Aller à droite">→</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.querySelector("#terrain");
+    const context = canvas.getContext("2d");
+    const scoreElement = document.querySelector("#score");
+    const recordElement = document.querySelector("#record");
+    const statusElement = document.querySelector("#status");
+    const pauseButton = document.querySelector("#pause");
+    const installButton = document.querySelector("#install");
+    const cellSize = 24;
+    const columns = canvas.width / cellSize;
+    const rows = canvas.height / cellSize;
+    const directions = {
+      up: [0, -1],
+      down: [0, 1],
+      left: [-1, 0],
+      right: [1, 0],
+    };
+    let snake;
+    let direction;
+    let nextDirection;
+    let apple;
+    let score;
+    let bestScore = readBestScore();
+    let state;
+    let timer;
+    let swipeStart = null;
+
+    function readBestScore() {
+      try {
+        return Number(localStorage.getItem("serpent-best") || 0);
+      } catch {
+        return 0;
+      }
+    }
+
+    function saveBestScore() {
+      try {
+        localStorage.setItem("serpent-best", String(bestScore));
+      } catch {
+        // Le jeu reste jouable si le navigateur bloque le stockage local.
+      }
+    }
+
+    function placeApple() {
+      const emptyCells = [];
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < columns; x += 1) {
+          if (!snake.some((segment) => segment.x === x && segment.y === y)) {
+            emptyCells.push({ x, y });
+          }
+        }
+      }
+      apple = emptyCells.length ? emptyCells[Math.floor(Math.random() * emptyCells.length)] : null;
+    }
+
+    function resetGame() {
+      clearInterval(timer);
+      snake = [{ x: Math.floor(columns / 2), y: Math.floor(rows / 2) }];
+      direction = directions.right;
+      nextDirection = direction;
+      score = 0;
+      state = "ready";
+      placeApple();
+      scoreElement.textContent = score;
+      recordElement.textContent = bestScore;
+      statusElement.textContent = "Prêt·e ? Appuie sur une flèche.";
+      pauseButton.textContent = "Pause";
+      draw();
+    }
+
+    function setDirection(name) {
+      if (state === "over" || state === "won") return;
+      const candidate = directions[name];
+      if (state === "running" && candidate[0] === -nextDirection[0] && candidate[1] === -nextDirection[1]) return;
+      nextDirection = candidate;
+      if (state === "ready") {
+        state = "running";
+        statusElement.textContent = "À toi de jouer !";
+        timer = setInterval(tick, 105);
+      } else if (state === "paused") {
+        resumeGame();
+      }
+    }
+
+    function tick() {
+      direction = nextDirection;
+      const head = {
+        x: snake[0].x + direction[0],
+        y: snake[0].y + direction[1],
+      };
+      const eatsApple = apple && head.x === apple.x && head.y === apple.y;
+      const bodyToCheck = eatsApple ? snake : snake.slice(0, -1);
+      const hitsWall = head.x < 0 || head.x >= columns || head.y < 0 || head.y >= rows;
+      const hitsSnake = bodyToCheck.some((segment) => segment.x === head.x && segment.y === head.y);
+
+      if (hitsWall || hitsSnake) {
+        endGame("over");
+        return;
+      }
+
+      snake.unshift(head);
+      if (eatsApple) {
+        score += 10;
+        scoreElement.textContent = score;
+        if (score > bestScore) {
+          bestScore = score;
+          recordElement.textContent = bestScore;
+          saveBestScore();
+        }
+        placeApple();
+        if (!apple) {
+          endGame("won");
+          return;
+        }
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function endGame(result) {
+      clearInterval(timer);
+      state = result;
+      statusElement.textContent = result === "won" ? "Incroyable, tu as gagné !" : "Partie terminée. On en refait une ?";
+      draw();
+    }
+
+    function pauseGame() {
+      if (state !== "running") return;
+      clearInterval(timer);
+      state = "paused";
+      pauseButton.textContent = "Reprendre";
+      statusElement.textContent = "Partie en pause.";
+      draw();
+    }
+
+    function resumeGame() {
+      if (state !== "paused") return;
+      state = "running";
+      pauseButton.textContent = "Pause";
+      statusElement.textContent = "À toi de jouer !";
+      timer = setInterval(tick, 105);
+      draw();
+    }
+
+    function draw() {
+      context.fillStyle = "#0d211d";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = "#18332d";
+      context.lineWidth = 1;
+      for (let x = 0; x <= canvas.width; x += cellSize) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, canvas.height);
+        context.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += cellSize) {
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(canvas.width, y);
+        context.stroke();
+      }
+
+      if (apple) {
+        const centerX = apple.x * cellSize + cellSize / 2;
+        const centerY = apple.y * cellSize + cellSize / 2;
+        context.fillStyle = "#f07858";
+        context.beginPath();
+        context.arc(centerX, centerY + 1, 8, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "#d6f36a";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(centerX, centerY - 6);
+        context.lineTo(centerX + 2, centerY - 10);
+        context.stroke();
+      }
+
+      snake.forEach((segment, index) => {
+        const inset = index === 0 ? 2 : 3;
+        const x = segment.x * cellSize + inset;
+        const y = segment.y * cellSize + inset;
+        context.fillStyle = index === 0 ? "#d6f36a" : "#83c98b";
+        context.beginPath();
+        context.roundRect(x, y, cellSize - inset * 2, cellSize - inset * 2, 5);
+        context.fill();
+      });
+
+      if (state !== "running") {
+        context.fillStyle = "rgba(8, 24, 20, .7)";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        const title = state === "ready" ? "PRÊT·E ?" : state === "paused" ? "PAUSE" : state === "won" ? "BRAVO !" : "FIN DE PARTIE";
+        const subtitle = state === "ready" ? "Utilise les flèches ou les boutons" : state === "paused" ? "Appuie sur Reprendre" : "Appuie sur Recommencer";
+        context.textAlign = "center";
+        context.fillStyle = "#d6f36a";
+        context.font = "700 34px Georgia, serif";
+        context.fillText(title, canvas.width / 2, canvas.height / 2 - 8);
+        context.fillStyle = "#f1eee2";
+        context.font = "15px 'Segoe UI', sans-serif";
+        context.fillText(subtitle, canvas.width / 2, canvas.height / 2 + 25);
+      }
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const keyDirections = {
+        ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+        w: "up", s: "down", a: "left", d: "right",
+      };
+      const name = keyDirections[event.key] || keyDirections[event.key.toLowerCase()];
+      if (name) {
+        event.preventDefault();
+        setDirection(name);
+      } else if (event.code === "Space") {
+        event.preventDefault();
+        state === "paused" ? resumeGame() : pauseGame();
+      }
+    });
+
+    document.querySelectorAll("[data-direction]").forEach((button) => {
+      button.addEventListener("click", () => setDirection(button.dataset.direction));
+    });
+    document.querySelector("#restart").addEventListener("click", resetGame);
+    pauseButton.addEventListener("click", () => state === "paused" ? resumeGame() : pauseGame());
+
+    let installationEnAttente = null;
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      installationEnAttente = event;
+      installButton.hidden = false;
+    });
+    installButton.addEventListener("click", async () => {
+      if (!installationEnAttente) return;
+      installationEnAttente.prompt();
+      await installationEnAttente.userChoice;
+      installationEnAttente = null;
+      installButton.hidden = true;
+    });
+    window.addEventListener("appinstalled", () => {
+      installButton.hidden = true;
+      statusElement.textContent = "Jeu installé. Bonne partie !";
+    });
+
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "touch") swipeStart = { x: event.clientX, y: event.clientY };
+    });
+    canvas.addEventListener("pointerup", (event) => {
+      if (!swipeStart) return;
+      const dx = event.clientX - swipeStart.x;
+      const dy = event.clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+      setDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
